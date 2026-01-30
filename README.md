@@ -1,5 +1,11 @@
 # Chat-to-Google-Drive Save Bot
 
+- Author: Chun-Lung(Gyd) Tseng
+- Email: kingterrygyd@gmail.com
+- Twitter: @kingterrygyd
+- Facebook: facebook.com/barbariangyd
+- Donation: <a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=4YYN5LS3Y3S32&source=url'><img alt='Donate with PayPal button' src='https://www.paypalobjects.com/en_US/TW/i/btn/btn_donateCC_LG.gif' border='0' ></a>
+
 這是一個專為 LINE（未來支援 Discord）設計的聊天機器人，其唯一目標是：**將使用者在聊天中標記的內容（文字、連結、檔案），整理後直接存入 Google Drive**。
 
 這非常適合作為 **NotebookLM** 或其他 AI 工具的資料收集器。
