@@ -1,0 +1,14 @@
+line-bot-sdk
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+fastapi
+uvicorn
+python-dotenv
+pycryptodome
+aiohttp
+python-multipart
+pyngrok
+beautifulsoup4
+tqdm
+requests
