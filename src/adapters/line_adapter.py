@@ -5,6 +5,9 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.models import MessageEvent, TextMessage, ImageMessage, VideoMessage, FileMessage, TextSendMessage
 from concurrent.futures import ThreadPoolExecutor
 from ..services.save_service import SaveService
+from ..commands.abstraction import CommandRegistry, CommandContext
+from .line_strategies import LineHelpCommand, LineAutoSaveCommand, LineSaveCommand
+from ..locales.i18n_service import t
 
 class LineAdapter:
     def __init__(self, save_service: SaveService):
@@ -18,6 +21,12 @@ class LineAdapter:
         self.executor = ThreadPoolExecutor(max_workers=10) # 增加 worker 數量
         self.queue_count = 0  # 追蹤當前排隊中的任務數
 
+        # Command Registry Initialization
+        self.registry = CommandRegistry()
+        self.registry.register(LineSaveCommand())
+        self.registry.register(LineAutoSaveCommand())
+        self.registry.register(LineHelpCommand())
+
         from linebot.models import StickerMessage, LocationMessage, AudioMessage
         @self.handler.add(MessageEvent, message=(TextMessage, ImageMessage, VideoMessage, FileMessage, StickerMessage, LocationMessage, AudioMessage))
         def handle_message(event):
@@ -30,7 +39,7 @@ class LineAdapter:
         else:
             self.auto_save_settings = {}
 
-    def _save_auto_save_settings(self):
+    def save_auto_save_settings(self):
         with open(self.auto_save_file, 'w') as f:
             json.dump(self.auto_save_settings, f)
 
@@ -57,27 +66,20 @@ class LineAdapter:
 
     def _on_message(self, event: MessageEvent):
         user_id = event.source.user_id
-        context = self._get_context_name(event)
+        context = self.get_context_name(event)
         
         if isinstance(event.message, TextMessage):
             text = event.message.text.strip()
             print(f"📝 收到文字訊息來自 {context}: {text}", flush=True)
             
             # 1. 處理指令 (優先)
-            
-            # 處理 /auto_save
-            if text.startswith('/auto_save'):
-                self._handle_auto_save_command(event, text)
-                return
-
-            # 處理 /save
-            if text.startswith('/save'):
-                self._handle_save_command(event, text)
-                return
-
-            # 處理 /help
-            if text.startswith('/help'):
-                self._handle_help_command(event)
+            command = self.registry.get_command(text)
+            if command:
+                try:
+                    command.execute(CommandContext(self, event, text))
+                except Exception as e:
+                    print(f"❌ Command execution error: {e}", flush=True)
+                    self.reply_message(event.reply_token, TextSendMessage(text=t("error_command_execution")))
                 return
             
             # 處理未知指令
@@ -91,14 +93,15 @@ class LineAdapter:
             self.queue_count += 1
             
             # 立即回覆告知已進入隊列，並使用引用功能 (quoteToken)
-            queue_msg = "📥 已收到媒體，正在排隊處理中..." if not isinstance(event.message, TextMessage) else "📝 已收到文字，正在處理中..."
+            # 立即回覆告知已進入隊列，並使用引用功能 (quoteToken)
+            queue_msg = t("queue_media") if not isinstance(event.message, TextMessage) else t("queue_text")
             
             # 獲取 quoteToken (如果有的話)
             quote_token = getattr(event.message, 'quote_token', None)
             
             # 建立回傳訊息
             msg = TextSendMessage(
-                text=f"{queue_msg}\n(當前隊列剩餘: {self.queue_count} 件)",
+                text=f"{queue_msg}{t('queue_info', count=self.queue_count)}",
                 quote_token=quote_token
             )
             
@@ -109,102 +112,10 @@ class LineAdapter:
             self.executor.submit(self._handle_auto_backup, event)
             return
 
-    def _handle_auto_save_command(self, event: MessageEvent, text: str):
-        if event.source.type != 'user':
-            self.line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="⚠️ /auto_save 功能僅限 1:1 私訊使用。")
-            )
-            return
 
-        user_id = event.source.user_id
-        current_state = self.auto_save_settings.get(user_id, False)
-        
-        # 解析指令內容
-        parts = text.split()
-        if len(parts) > 1:
-            cmd = parts[1].lower()
-            if cmd == 'on':
-                new_state = True
-            elif cmd == 'off':
-                new_state = False
-            else:
-                new_state = not current_state
-        else:
-            new_state = not current_state
-
-        self.auto_save_settings[user_id] = new_state
-        self._save_auto_save_settings()
-        
-        status_msg = "開啟" if new_state else "關閉"
-        self.line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=f"🔄 Auto-Save 已{status_msg}。")
-        )
-
-    def _handle_help_command(self, event: MessageEvent):
-        help_text = (
-            "📌 可用指令列表：\n\n"
-            "1️⃣ /save [標題]\n"
-            "   立即儲存當前文字或回覆的媒體。如果是回覆媒體，標題可選。\n\n"
-            "2️⃣ /auto_save [on/off]\n"
-            "   切換自動儲存模式 (僅限 1:1 私訊)。當開啟時，所有訊息都會被儲存。\n\n"
-            "3️⃣ /help\n"
-            "   顯示此幫助訊息。"
-        )
-        self.line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=help_text)
-        )
-
-    def _handle_save_command(self, event: MessageEvent, text: str):
-        # 提取標題
-        match = re.match(r'^/save\s*(.*)', text)
-        user_title = match.group(1).strip() if match else ""
-        chat_context = self._get_context_name(event)
-        
-        try:
-            # 偵測回覆 (Debug)
-            msg_dict = {}
-            if hasattr(event.message, 'as_json_dict'):
-                msg_dict = event.message.as_json_dict()
-                print(f"🔍 [Debug] Message JSON: {msg_dict}", flush=True)
-
-            quoted_msg_id = getattr(event.message, 'quoted_message_id', None)
-            if not quoted_msg_id:
-                # 嘗試從 Manual Extraction 找
-                if hasattr(self, '_temp_quoted_ids'):
-                    quoted_msg_id = self._temp_quoted_ids.get(event.message.id)
-            
-            if not quoted_msg_id:
-                # 嘗試從 message.as_json_dict 找
-                if hasattr(event.message, 'as_json_dict'):
-                    quoted_msg_id = event.message.as_json_dict().get('quotedMessageId')
-            
-            if not quoted_msg_id:
-                # 最後嘗試從 event.as_json_dict 找 (針對 SDK 解析不完整的情況)
-                if hasattr(event, 'as_json_dict'):
-                    evt_dict = event.as_json_dict()
-                    quoted_msg_id = evt_dict.get('message', {}).get('quotedMessageId')
-
-            if quoted_msg_id:
-                print(f"🎯 [Manual-Save] 偵測到回覆儲存 (Quoted ID: {quoted_msg_id})", flush=True)
-                self._handle_save_by_id(event, quoted_msg_id, user_title, chat_context)
-            else:
-                # 處理當前訊息內容 (純文字)
-                doc_link = self.save_service.process_save(
-                    platform="LINE",
-                    context=chat_context,
-                    content_type="text",
-                    text=user_title or None
-                )
-                self._reply_success(event.reply_token, doc_link)
-        except Exception as e:
-            print(f"❌ Error saving: {e}", flush=True)
-            self._reply_error(event.reply_token)
 
     def _handle_auto_backup(self, event: MessageEvent):
-        chat_context = self._get_context_name(event)
+        chat_context = self.get_context_name(event)
         user_id = event.source.user_id
         try:
             doc_link = ""
@@ -225,7 +136,7 @@ class LineAdapter:
             if doc_link:
                 quote_token = getattr(event.message, 'quote_token', None)
                 msg = TextSendMessage(
-                    text=f"✅ 備份成功！{file_info}\n連結：{doc_link}",
+                    text=t("backup_success", file_info=file_info, link=doc_link),
                     quote_token=quote_token
                 )
                 self.line_bot_api.push_message(user_id, msg)
@@ -234,7 +145,7 @@ class LineAdapter:
             print(f"❌ Auto-save error: {e}", flush=True)
             self.line_bot_api.push_message(
                 user_id,
-                TextSendMessage(text=f"❌ 備份失敗，請檢查網路或服務狀態。")
+                TextSendMessage(text=t("backup_error"))
             )
         finally:
             self.queue_count = max(0, self.queue_count - 1)
@@ -294,7 +205,7 @@ class LineAdapter:
                             progress = int((downloaded / total_size) * 100)
                             if progress >= last_line_progress + 25 and progress < 100:
                                 last_line_progress = (progress // 25) * 25
-                                try: self.line_bot_api.push_message(user_id, TextSendMessage(text=f"⏳ 下載進度: {last_line_progress}% ..."))
+                                try: self.line_bot_api.push_message(user_id, TextSendMessage(text=t("download_progress", progress=last_line_progress)))
                                 except: pass
                 else:
                     content_bytes = resp.content
@@ -343,7 +254,7 @@ class LineAdapter:
         )
         return doc_link, file_info
 
-    def _handle_save_by_id(self, event: MessageEvent, msg_id: str, title: str, context: str):
+    def handle_save_by_id(self, event: MessageEvent, msg_id: str, title: str, context: str):
         # 使用執行緒池非同步處理
         user_id = event.source.user_id
         
@@ -353,7 +264,7 @@ class LineAdapter:
                 quote_token = getattr(event.message, 'quote_token', None)
                 self.line_bot_api.push_message(
                     user_id,
-                    TextSendMessage(text="🚀 正在處理您標記的內容...", quote_token=quote_token)
+                    TextSendMessage(text=t("manual_save_processing"), quote_token=quote_token)
                 )
 
                 doc_link, file_info = self._process_media_message(
@@ -367,30 +278,24 @@ class LineAdapter:
                 # 回傳成功
                 self.line_bot_api.push_message(
                     user_id,
-                    TextSendMessage(text=f"✅ 標記儲存成功！{file_info}\n連結：{doc_link}", quote_token=quote_token)
+                    TextSendMessage(text=t("manual_save_success", file_info=file_info, link=doc_link), quote_token=quote_token)
                 )
             except Exception as e:
                 print(f"❌ Manual save error: {e}", flush=True)
                 self.line_bot_api.push_message(
                     user_id, 
-                    TextSendMessage(text="❌ 無法儲存該標記內容。提示：目前回覆模式僅支援媒體檔案 (圖片/影片/檔案) 或位置貼圖。如果是文字訊息，請直接轉傳並開啟 /auto_save。")
+                    TextSendMessage(text=t("manual_save_error"))
                 )
 
         self.executor.submit(task)
 
-    def _reply_success(self, reply_token: str, doc_link: str):
-        self.line_bot_api.reply_message(
-            reply_token,
-            TextSendMessage(text=f"✅ 儲存成功！\n文件連結：{doc_link}")
-        )
+    def reply_message(self, token, msg):
+        self.line_bot_api.reply_message(token, msg)
 
-    def _reply_error(self, reply_token: str):
-        self.line_bot_api.reply_message(
-            reply_token,
-            TextSendMessage(text="❌ 儲存失敗，請稍後再試。")
-        )
+    def get_manual_quoted_id(self, msg_id):
+        return self._temp_quoted_ids.get(msg_id)
 
-    def _get_context_name(self, event: MessageEvent) -> str:
+    def get_context_name(self, event: MessageEvent) -> str:
         source_type = event.source.type
         if source_type == 'user':
             try:

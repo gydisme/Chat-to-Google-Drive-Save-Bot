@@ -12,8 +12,8 @@ __pycache__/
 .mypy_cache/
 
 # Logs
+logs/
 *.log
-mypy_errors.txt
 
 # Runtime settings
 auto_save_settings.json

@@ -1,0 +1,42 @@
+{
+    "en": {
+        "help_text": "📌 Available Commands:\n\n1️⃣ /save [title]\n   Save current text or replied media immediately. Title is optional if replying to media.\n\n2️⃣ /auto_save [on/off]\n   Toggle auto-save mode (1:1 DM Only). When ON, all messages are saved.\n\n3️⃣ /help\n   Show this help message.",
+        "auto_save_dm_only": "⚠️ /auto_save is only available in 1:1 private chats.",
+        "auto_save_status": "🔄 Auto-Save is now {status}.",
+        "auto_save_on": "ON",
+        "auto_save_off": "OFF",
+        "save_success": "✅ Saved successfully!\nLink: {link}",
+        "save_error": "❌ Save failed, please try again later.",
+        "manual_save_processing": "🚀 Processing your request...",
+        "manual_save_success": "✅ Marked content saved! {file_info}\nLink: {link}",
+        "manual_save_error": "❌ Failed to save marked content. Hint: Only media files (Image/Video/File) or Location/Sticker are supported in reply mode. For text, please forward and use /auto_save.",
+        "queue_media": "📥 Media received, queuing...",
+        "queue_text": "📝 Text received, queuing...",
+        "queue_info": "\n(Queue remaining: {count})",
+        "download_progress": "⏳ Downloading: {progress}% ...",
+        "backup_success": "✅ Backup successful! {file_info}\nLink: {link}",
+        "backup_error": "❌ Backup failed, check network/service status.",
+        "error_command_execution": "❌ Command execution error.",
+        "unknown_command": "❓ Unknown command: {text}"
+    },
+    "zh-TW": {
+        "help_text": "📌 可用指令列表：\n\n1️⃣ /save [標題]\n   立即儲存當前文字或回覆的媒體。如果是回覆媒體，標題可選。\n\n2️⃣ /auto_save [on/off]\n   切換自動儲存模式 (僅限 1:1 私訊)。當開啟時，所有訊息都會被儲存。\n\n3️⃣ /help\n   顯示此幫助訊息。",
+        "auto_save_dm_only": "⚠️ /auto_save 功能僅限 1:1 私訊使用。",
+        "auto_save_status": "🔄 Auto-Save 已{status}。",
+        "auto_save_on": "開啟",
+        "auto_save_off": "關閉",
+        "save_success": "✅ 儲存成功！\n文件連結：{link}",
+        "save_error": "❌ 儲存失敗，請稍後再試。",
+        "manual_save_processing": "🚀 正在處理您標記的內容...",
+        "manual_save_success": "✅ 標記儲存成功！{file_info}\n連結：{link}",
+        "manual_save_error": "❌ 無法儲存該標記內容。提示：目前回覆模式僅支援媒體檔案 (圖片/影片/檔案) 或位置貼圖。如果是文字訊息，請直接轉傳並開啟 /auto_save。",
+        "queue_media": "📥 已收到媒體，正在排隊處理中...",
+        "queue_text": "📝 已收到文字，正在處理中...",
+        "queue_info": "\n(當前隊列剩餘: {count} 件)",
+        "download_progress": "⏳ 下載進度: {progress}% ...",
+        "backup_success": "✅ 備份成功！{file_info}\n連結：{link}",
+        "backup_error": "❌ 備份失敗，請檢查網路或服務狀態。",
+        "error_command_execution": "❌ 指令執行發生錯誤。",
+        "unknown_command": "❓ 收到未知指令: {text}"
+    }
+}

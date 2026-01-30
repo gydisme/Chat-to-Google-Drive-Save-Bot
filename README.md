@@ -61,7 +61,9 @@ This method runs the bot as a standalone account, but be aware of the Service Ac
 3. Rename the downloaded file to `credentials.json` and place it in the project root directory.
 4. **Authorize Folder**: Add the `client_email` from the key to the "Share" list of your Google Drive folder and set as "Editor".
 
-### 2. Configure LINE Messaging API
+### 3. Configure Chat Platforms
+
+#### Option A: LINE
 1. Go to [LINE Developers Console](https://developers.line.biz/) and log in.
 2. **Create Provider**: Click "Create a new provider", enter a name (e.g., `MyProjects`), and click "Create".
 3. **Create Channel (via Official Account)**:
@@ -87,21 +89,24 @@ This method runs the bot as a standalone account, but be aware of the Service Ac
    - Under "Detailed settings", set **"Webhook"** to **"Enabled"**.
    - Set "Auto-response messages" and "Greeting messages" to "Disabled".
 
-### 3. Environment Variables
+#### Option B: Discord (Coming Soon)
+*Check Roadmap for updates.*
+
+### 4. Environment Variables
 Fill in the information obtained above into the `.env` file. Copy `.env.example` and rename it to `.env`:
+
 ```env
-# From LINE Developers Console -> Basic settings
-LINE_CHANNEL_SECRET=Your_Channel_Secret
-
-# From LINE Developers Console -> Messaging API (Long-lived Token from Issue button)
-LINE_CHANNEL_ACCESS_TOKEN=Your_Channel_Access_Token
-
+# --- Google Drive (Common) ---
 # From Google Drive Folder URL ID
-# XXXXXXXXXX from https://drive.google.com/drive/u/0/folders/XXXXXXXXXX or https://drive.google.com/drive/folders/XXXXXXXXXX
 TARGET_DRIVE_FOLDER_ID=XXXXXXXXXX
-
 # Credential Path (Default is credentials.json)
 GOOGLE_APPLICATION_CREDENTIALS=credentials.json
+
+# --- LINE Specific ---
+# From LINE Developers Console -> Basic settings
+LINE_CHANNEL_SECRET=Your_Channel_Secret
+# From LINE Developers Console -> Messaging API (Long-lived Token from Issue button)
+LINE_CHANNEL_ACCESS_TOKEN=Your_Channel_Access_Token
 ```
 
 ### 4. Initialize Environment (Recommended)
@@ -159,6 +164,7 @@ In a LINE chat room:
 - [ ] **System Improvements**
   - [ ] **Multi-User Support**: Allow multiple users to bind their own Google Drive folders.
   - [ ] **Docker Support**: Provide `Dockerfile` and `docker-compose.yml` for easy deployment.
+  - [x] **i18n Support**: Supported languages: English, Traditional Chinese.
 
 ## �🔒 Privacy & Security
 - **No Long-Term Data Storage**: The Bot acts only as a relay; it does not save your chat content in a local database.

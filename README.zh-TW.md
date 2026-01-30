@@ -63,7 +63,9 @@
 3. 下載後更名為 `credentials.json` 並放在專案根目錄。
 4. **授權資料夾**：將金鑰中的 `client_email` 加入您 Google Drive 資料夾的「共用」名單，並設定為「編輯者」。
 
-### 2. 設定 LINE Messaging API
+### 3. 設定聊天平台 (Configure Chat Platforms)
+
+#### 選項 A: LINE
 1. 前往 [LINE Developers Console](https://developers.line.biz/) 並登入。
 2. **建立 Provider**：點擊「Create a new provider」，輸入名稱（如 `MyProjects`）後點擊「Create」。
 3. **建立 Channel (透過官方帳號)**：
@@ -89,21 +91,24 @@
    - 在下方「詳細設定」中，將 **「Webhook」** 設為 **「啟用」**。
    - 將「自動回應訊息」與「招呼訊息」設為「停用」。
 
-### 3. 環境變數
+#### 選項 B: Discord (即將推出)
+*請查看 Roadmap 以獲得最新資訊。*
+
+### 4. 環境變數 (Environment Variables)
 將上述步驟取得的資訊填入 `.env` 檔案中。複製 `.env.example` 並更名為 `.env`：
+
 ```env
-# 來自 LINE Developers Console -> Basic settings
-LINE_CHANNEL_SECRET=你的_Channel_Secret
-
-# 來自 LINE Developers Console -> Messaging API (點擊 Issue 產生的長效 Token)
-LINE_CHANNEL_ACCESS_TOKEN=你的_Channel_Access_Token
-
+# --- Google Drive (通用設定) ---
 # 來自 Google Drive 資料夾的網址列 ID
-# https://drive.google.com/drive/u/0/folders/XXXXXXXXXX 或 https://drive.google.com/drive/folders/XXXXXXXXXX 中的 XXXXXXXXXX
 TARGET_DRIVE_FOLDER_ID=XXXXXXXXXX
-
 # 憑證路徑 (預設為 credentials.json)
 GOOGLE_APPLICATION_CREDENTIALS=credentials.json
+
+# --- LINE 專用設定 ---
+# 來自 LINE Developers Console -> Basic settings
+LINE_CHANNEL_SECRET=你的_Channel_Secret
+# 來自 LINE Developers Console -> Messaging API (點擊 Issue 產生的長效 Token)
+LINE_CHANNEL_ACCESS_TOKEN=你的_Channel_Access_Token
 ```
 
 ### 4. 初始化環境 (推薦)
@@ -161,6 +166,7 @@ python scripts/check_environment.py
 - [ ] **系統改進**
   - [ ] **多用戶支援**：允許不同使用者綁定各自的 Google Drive 資料夾。
   - [ ] **Docker 支援**：提供 `Dockerfile` 與 `docker-compose.yml` 以便輕鬆部署。
+  - [x] **多語系支援 (i18n)**：支援語言：英文、繁體中文。
 
 ## 🔒 隱私與安全
 - **無長期資料暫存**：Bot 只負責轉接，不會在本地資料庫保存您的聊天內容。
