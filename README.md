@@ -1,3 +1,5 @@
+[🇹🇼 繁體中文](README.zh-TW.md) | [🇺🇸 English](README.md)
+
 # Chat-to-Google-Drive Save Bot
 
 - Author: Chun-Lung(Gyd) Tseng
@@ -6,152 +8,162 @@
 - Facebook: facebook.com/barbariangyd
 - [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/ncp/payment/TY3G9Z2WJR2JJ)
 
+This is a chatbot designed for LINE (Discord support coming soon) with a single goal: **to organize and save content marked by the user in chats (text, links, files) directly to Google Drive**.
 
+It is perfect for acting as a data collector for **NotebookLM** or other AI tools.
 
-這是一個專為 LINE（未來支援 Discord）設計的聊天機器人，其唯一目標是：**將使用者在聊天中標記的內容（文字、連結、檔案），整理後直接存入 Google Drive**。
+## 🚀 Core Features
 
-這非常適合作為 **NotebookLM** 或其他 AI 工具的資料收集器。
+- **Precise Capture**: The bot processes content ONLY when the `/save` command is used, ensuring privacy.
+- **Structured Organization**: Automatically generates Google Docs containing titles, sources, timestamps, and content.
+- **Multimedia Support**:
+  - **Plain Text & Links**: Written directly to Google Docs.
+  - **Images/Videos/Files**: Uploaded to a Google Drive folder, with links preserved in the Doc.
+- **Auto-Title**: Supports `/save [Your Title]`. If no title is provided, it defaults to a timestamp.
 
-## 🚀 核心功能
-
-- **精確捕捉**：只有在輸入 `/save` 指令時，Bot 才會處理內容，保護隱私。
-- **結構化整理**：自動產生包含標題、來源、時間戳記與內容的 Google Doc。
-- **多媒體支援**：
-  - **純文字 & 連結**：直接寫入 Google Doc。
-  - **圖片/影片/檔案**：上傳至 Google Drive 檔案夾，並在 Doc 中保留連結。
-- **自動標題**：支援 `/save [你的標題]`，若未提供則自動以時間命名。
-
-## 🛠️ 技術架構
+## 🛠️ Technical Architecture
 
 - **Runtime**: Python 3.10+ (FastAPI)
-- **Adapter 模式**：核心邏輯與通訊平台（LINE/Discord）解耦。
-- **Google API**: 使用 Google Drive & Documents API 進行高可靠性寫入。
+- **Adapter Pattern**: Decouples core logic from communication platforms (LINE/Discord).
+- **Google API**: Uses Google Drive & Documents API for highly reliable writing.
 
-## 📦 安裝與設定
+## 📦 Installation & Setup
 
-### 1. Google 雲端平台基礎設定 (必要)
-無論選擇哪種授權方式，都必須先完成以下準備：
-1. 前往 [Google Cloud Console](https://console.cloud.google.com/)。
-2. **建立新專案**：點擊上方專案選擇器，建立一個新專案（如 `Gyd-Drive-Bot`）。
-3. **啟用 API**：在搜尋列搜尋並點擊「啟用」以下兩個服務：
+### 1. Google Cloud Platform Basic Setup (Required)
+Regardless of the authorization method chosen, you must complete the following preparations:
+1. Go to [Google Cloud Console](https://console.cloud.google.com/).
+2. **Create New Project**: Click the project selector at the top and create a new project (e.g., `Gyd-Drive-Bot`).
+3. **Enable APIs**: Search for and "Enable" the following two services:
    - **Google Drive API**
    - **Google Docs API**
 
-### 2. 選擇授權方式 (二選一)
+### 2. Choose Authorization Method (Pick One)
 
-#### 方案 A: 使用個人帳號 (推薦，可使用個人空間)
-此方式讓機器人以您的身份執行，檔案擁有者為您自己。
-1. 前往「憑證」頁面，點擊 **「建立憑證」** > **「OAuth 用戶端 ID」**。
-2. **設定同意畫面 (重要)**：
-   - 點擊「設定同意畫面」，選擇 **External**。
-   - 填寫 App 名稱及您的 Email。
-   - **新增測試使用者**：在「Test users」區塊點擊 **ADD USERS**，輸入您自己的 Google Email。*（未加入將會導致 403 access_denied 錯誤）*
-3. 應用程式類型選擇 **「桌面應用程式 (Desktop App)」**。
-4. 下載 JSON 檔案，更名為 `client_secrets.json` 並放在專案根目錄。
-5. 執行授權腳本：
+#### Option A: Use Personal Account (Recommended, uses personal storage)
+This method runs the bot as you, and you own the files.
+1. Go to the "Credentials" page, click **"Create Credentials"** > **"OAuth Client ID"**.
+2. **Configure Consent Screen (Important)**:
+   - Click "Configure Consent Screen", select **External**.
+   - Fill in the App Name and your Email.
+   - **Add Test Users**: Under the "Test users" section, click **ADD USERS** and enter your own Google Email. *(Failure to add this will result in a 403 access_denied error)*
+3. Select Application Type **"Desktop App"**.
+4. Download the JSON file, rename it to `client_secrets.json`, and place it in the project root directory.
+5. Run the authorization script:
    ```bash
    python scripts/authorize_user.py
    ```
-   - *注意：若出現「Google 尚未驗證此應用程式」，請點擊「進階」並選擇「前往... (不安全)」以繼續。*
+   - *Note: If you see "Google hasn't verified this app", click "Advanced" and select "Go to... (unsafe)" to continue.*
 
-#### 方案 B: 使用 Service Account (適合伺服器長期執行)
-此方式機器人為獨立帳號，但需注意 Service Account 本身空間配額限制。
-1. 前往「服務帳戶」，建立名稱為 `drive-bot` 的帳戶。
-2. 進入詳情頁 > 「金鑰」 > 「新增金鑰」 > 選擇 **JSON** 並下載。
-3. 下載後更名為 `credentials.json` 並放在專案根目錄。
-4. **授權資料夾**：將金鑰中的 `client_email` 加入您 Google Drive 資料夾的「共用」名單，並設定為「編輯者」。
+#### Option B: Use Service Account (Suitable for long-running servers)
+This method runs the bot as a standalone account, but be aware of the Service Account's storage quota limits.
+1. Go to "Service Accounts", create an account named `drive-bot`.
+2. Enter details page > "Keys" > "Add Key" > Select **JSON** and download.
+3. Rename the downloaded file to `credentials.json` and place it in the project root directory.
+4. **Authorize Folder**: Add the `client_email` from the key to the "Share" list of your Google Drive folder and set as "Editor".
 
-### 2. 設定 LINE Messaging API
-1. 前往 [LINE Developers Console](https://developers.line.biz/) 並登入。
-2. **建立 Provider**：點擊「Create a new provider」，輸入名稱（如 `MyProjects`）後點擊「Create」。
-3. **建立 Channel (透過官方帳號)**：
-   - 點擊「Create a Messaging API channel」。
-   - 系統會提示您無法直接建立，請點擊 **"Create a LINE Official Account"** 按鈕。
-   - 這會導向 [LINE Official Account Manager](https://manager.line.biz/)。
-4. **設定官方帳號**：
-   - 填寫帳號名稱（如 `GDrive Save Bot`）及相關資訊並提交。
-   - 進入帳號後，點擊右上角的「設定」 > 「Messaging API」。
-   - 點擊「啟用 Messaging API」，並選擇您剛才建立的 **Provider**。
-5. **取得金鑰與 Webhook (回到 Developers Console)**：
-   - 回到 [LINE Developers Console](https://developers.line.biz/) 重新整理。
-   - 進入剛產生的 Channel。
-   - **Basic settings**：取得 **Channel secret**。
-   - **Messaging API**：
-     - **Channel access token**：點擊「Issue」取得 Token。
-     - **Webhook URL**：輸入您的網址 + `/webhook/line`。
-     - 開啟 **Use webhook** 並點擊「Update」。
-6. **回應設定 (重要)**：
-   - 回到 [Official Account Manager](https://manager.line.biz/)。
-   - 「設定」 > 「回應設定」。
-   - 將「回應模式」設為「聊天機器人」。
-   - 在下方「詳細設定」中，將 **「Webhook」** 設為 **「啟用」**。
-   - 將「自動回應訊息」與「招呼訊息」設為「停用」。
+### 2. Configure LINE Messaging API
+1. Go to [LINE Developers Console](https://developers.line.biz/) and log in.
+2. **Create Provider**: Click "Create a new provider", enter a name (e.g., `MyProjects`), and click "Create".
+3. **Create Channel (via Official Account)**:
+   - Click "Create a Messaging API channel".
+   - The system will prompt that you cannot directly create one; click the **"Create a LINE Official Account"** button.
+   - This redirects to the [LINE Official Account Manager](https://manager.line.biz/).
+4. **Configure Official Account**:
+   - Fill in the account name (e.g., `GDrive Save Bot`) and relevant info, then submit.
+   - Once inside the account, click "Settings" on the top right > "Messaging API".
+   - Click "Enable Messaging API" and select the **Provider** you just created.
+5. **Get Keys & Webhook (Back to Developers Console)**:
+   - Return to [LINE Developers Console](https://developers.line.biz/) and refresh.
+   - Enter the newly generated Channel.
+   - **Basic settings**: Get **Channel secret**.
+   - **Messaging API**:
+     - **Channel access token**: Click "Issue" to get the Token.
+     - **Webhook URL**: Enter your URL + `/webhook/line`.
+     - Enable **Use webhook** and click "Update".
+6. **Response Settings (Important)**:
+   - Return to [Official Account Manager](https://manager.line.biz/).
+   - "Settings" > "Response settings".
+   - Set "Response mode" to "Chatbot".
+   - Under "Detailed settings", set **"Webhook"** to **"Enabled"**.
+   - Set "Auto-response messages" and "Greeting messages" to "Disabled".
 
-### 3. 環境變數
-將上述步驟取得的資訊填入 `.env` 檔案中。複製 `.env.example` 並更名為 `.env`：
+### 3. Environment Variables
+Fill in the information obtained above into the `.env` file. Copy `.env.example` and rename it to `.env`:
 ```env
-# 來自 LINE Developers Console -> Basic settings
-LINE_CHANNEL_SECRET=你的_Channel_Secret
+# From LINE Developers Console -> Basic settings
+LINE_CHANNEL_SECRET=Your_Channel_Secret
 
-# 來自 LINE Developers Console -> Messaging API (點擊 Issue 產生的長效 Token)
-LINE_CHANNEL_ACCESS_TOKEN=你的_Channel_Access_Token
+# From LINE Developers Console -> Messaging API (Long-lived Token from Issue button)
+LINE_CHANNEL_ACCESS_TOKEN=Your_Channel_Access_Token
 
-# 來自 Google Drive 資料夾的網址列 ID
-# https://drive.google.com/drive/u/0/folders/XXXXXXXXXX 或 https://drive.google.com/drive/folders/XXXXXXXXXX 中的 XXXXXXXXXX
+# From Google Drive Folder URL ID
+# XXXXXXXXXX from https://drive.google.com/drive/u/0/folders/XXXXXXXXXX or https://drive.google.com/drive/folders/XXXXXXXXXX
 TARGET_DRIVE_FOLDER_ID=XXXXXXXXXX
 
-# 憑證路徑 (預設為 credentials.json)
+# Credential Path (Default is credentials.json)
 GOOGLE_APPLICATION_CREDENTIALS=credentials.json
 ```
 
-### 4. 初始化環境 (推薦)
-此腳本會自動安裝所需的 Python 套件，並確認環境變數與 API 權限：
+### 4. Initialize Environment (Recommended)
+This script automatically installs required Python packages and verifies environment variables and API permissions:
 ```bash
 python scripts/check_environment.py
 ```
 
-### 5. 啟動服務與自動 Webhook 設定
-**現在您只需執行一條指令即可啟動 Bot 並自動處理網路連線：**
+### 5. Start Service & Auto Webhook Setup
+**Now you only need to run one command to start the Bot and automatically handle network connections:**
 
-1. 確保您的 `.env` 中設定了：
+1. Ensure your `.env` is set with:
    - `USE_NGROK=true`
-   - `NGROK_AUTHTOKEN=您的_Authtoken` (請至 [ngrok Dashboard](https://dashboard.ngrok.com/get-started/your-authtoken) 取得)
-2. 啟動服務：
+   - `NGROK_AUTHTOKEN=Your_Authtoken` (Get it from [ngrok Dashboard](https://dashboard.ngrok.com/get-started/your-authtoken))
+2. Start the service:
    ```bash
    python -m src.main
    ```
-- Bot 啟動時會自動偵測 `USE_NGROK`，啟動隧道並**自動更新 LINE Developers Console 中的 Webhook URL**。
-- 看到 `✅ [Dev] Webhook URL 已更新` 後，您的 Bot 就已經準備好接收訊息了！
+- When the Bot starts, it detects `USE_NGROK`, starts the tunnel, and **automatically updates the Webhook URL in LINE Developers Console**.
+- Once you see `✅ [Dev] Webhook URL Updated`, your Bot is ready to receive messages!
 
-### 6. 手動 Webhook 設定 (選用)
-如果您不希望自動更新 Webhook，請將 `USE_NGROK` 設為 `false` 並手動設定：
-1. **啟動 ngrok**：執行 `ngrok http 8000`。
-2. **手動設定**：將 ngrok 網址填入 LINE Developers Console 的 Webhook URL 欄位並點擊 Update。
+### 6. Manual Webhook Setup (Optional)
+If you do not want to automatically update the Webhook, set `USE_NGROK` to `false` and configure manually:
+1. **Start ngrok**: Run `ngrok http 8000`.
+2. **Manual Config**: Paste the ngrok URL into the Webhook URL field in LINE Developers Console and click Update.
 
-## 📝 使用說明
+## 📝 Usage Instructions
 
-在 LINE 聊天室中：
+In a LINE chat room:
 
-1. **儲存純文字**
+1. **Save Plain Text**
    ```
-   /save 今天的會議紀錄
+   /save Meeting notes for today
    ```
 
-2. **儲存連結**
+2. **Save Link**
    ```
-   /save 重要的參考連結
+   /save Important reference link
    https://example.com/article
    ```
 
-3. **儲存圖片 / 影片 / 檔案**
-   - **方式 A (直接發送)**：先上傳檔案及多媒體，bot 會即時處理（需配合 `save_service` 配置）。
-   - **方式 B (回覆模式)**：對著想要儲存的圖片或檔案「長按 -> 回覆」，並輸入 `/save [標題]`。
-   - Bot 會自動將檔案上傳至 Google Drive，並在對應的 Google Doc 中插入檔案下載/檢視連結。
+3. **Save Image / Video / File**
+   - **Method A (Direct Send)**: Send the file/media first, the bot processes it immediately (requires `save_service` configuration).
+   - **Method B (Reply Mode)**: Long press the image or file you want to save -> "Reply", and enter `/save [Title]`.
+   - The bot will automatically upload the file to Google Drive and insert a download/view link into the corresponding Google Doc.
 
-## 🔒 隱私與安全
-- **無長期資料暫存**：Bot 只負責轉接，不會在本地資料庫保存您的聊天內容。
-- **群組隱私警示 (重要)**：請**避免將 Bot 邀請至多人群組**。由於目前採用綁定資料夾的設計，群組內任何成員輸入 `/save` 指令時，資料皆會被推送至您設定的 Google Drive。為了保護您的儲存空間與資訊安全，建議僅在 1:1 私訊中使用。
-- **最小權限**：建議設定 Service Account 只具備特定資料夾的寫入權限。
+## �️ Roadmap
+
+- [ ] **Multi-Platform Support**
+  - [ ] Support Discord (Adapter & Slash Commands)
+  - [ ] Support Telegram
+- [ ] **Enhanced Content Handling**
+  - [ ] **Rich Text**: Better preservation of Markdown/HTML formatting in Google Docs.
+  - [ ] **Voice-to-Text**: Transcribe voice messages directly into the Doc.
+- [ ] **System Improvements**
+  - [ ] **Multi-User Support**: Allow multiple users to bind their own Google Drive folders.
+  - [ ] **Docker Support**: Provide `Dockerfile` and `docker-compose.yml` for easy deployment.
+
+## �🔒 Privacy & Security
+- **No Long-Term Data Storage**: The Bot acts only as a relay; it does not save your chat content in a local database.
+- **Group Privacy Warning (Important)**: Please **avoid inviting the Bot to large groups**. Since it uses a folder-binding design, any member in the group entering `/save` will push data to your configured Google Drive. To protect your storage space and information security, it is recommended to use it only in 1:1 private messages.
+- **Least Privilege**: It is recommended to configure the Service Account with write permissions only for specific folders.
 
 ---
 *Developed with ❤️ for knowledge management enthusiasts.*
